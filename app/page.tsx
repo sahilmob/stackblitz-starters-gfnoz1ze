@@ -167,7 +167,7 @@ const ChatInterface = ({
         <div
           className={cn(
             "flex h-full overflow-hidden transition-all duration-500 ease-in-out",
-            hasWorkflow ? "w-[40%]" : "w-full",
+            hasWorkflow ? "w-[40%]" : "w-full max-w-[800px] mx-auto",
             showMobileView === "workflow" ? "hidden md:block" : "block"
           )}
         >
