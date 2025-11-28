@@ -5,6 +5,7 @@ import { siteConfig } from '@/config/site';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +15,7 @@ import { v4 as uuid } from 'uuid';
 import { cn } from '@/lib/utils';
 import { ButterflowWorkflowVisualization } from '@/components/workflow-visualization';
 import { Badge } from '@/components/ui/badge';
+import { MessageInput } from '@/components/message-input';
 
 interface LangChainMessageContent {
   type: 'text';
@@ -33,49 +35,15 @@ const LandingInput = ({
 }: {
   onSubmit: (message: string) => void;
 }) => {
-  const [input, setInput] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, []);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (input.trim()) {
-      onSubmit(input);
-      setInput('');
-    }
-  };
-
   return (
     <div className="h-[calc(100vh-70px)] flex flex-col items-center justify-center p-4">
       <h1 className="mb-8 text-4xl font-bold">Workflow AI</h1>
-      <form
-        onSubmit={handleSubmit}
-        className="group relative w-full max-w-lg focus-within:scale-105"
-      >
-        <Input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setInput(e.target.value)
-          }
-          placeholder="Ask anything..."
-          className="h-14 pr-12 text-lg shadow-lg"
-        />
-        <Button
-          type="submit"
-          size="icon"
-          className="absolute right-1 top-1/2 -translate-y-1/2 opacity-70 group-hover:opacity-100"
-          disabled={!input.trim()}
-        >
-          <Send className="h-5 w-5" />
-        </Button>
-      </form>
+      <MessageInput
+        onSubmit={onSubmit}
+        placeholder="Ask anything..."
+        variant="landing"
+        autoFocus
+      />
     </div>
   );
 };
@@ -129,7 +97,6 @@ const ChatInterface = ({
   onSendMessage: (message: string) => void;
   workflow: Workflow | null;
 }) => {
-  const [input, setInput] = useState('');
   const [showMobileView, setShowMobileView] = useState<'chat' | 'workflow'>(
     'chat'
   );
@@ -141,14 +108,6 @@ const ChatInterface = ({
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isLoading]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (input.trim()) {
-      onSendMessage(input);
-      setInput('');
-    }
-  };
 
   const hasWorkflow = workflow !== null;
 
@@ -206,24 +165,12 @@ const ChatInterface = ({
               </div>
 
               {/* Input Area */}
-              <form onSubmit={handleSubmit} className="border-t p-4">
-                <div className="flex gap-2">
-                  <Textarea
-                    value={input}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                      setInput(e.target.value)
-                    }
-                    placeholder="Type your message..."
-                    className="min-h-[60px] resize-none"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={input.trim() === '' || isLoading}
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              </form>
+              <MessageInput
+                onSubmit={onSendMessage}
+                disabled={isLoading}
+                placeholder="Type your message..."
+                variant="chat"
+              />
             </CardContent>
           </Card>
         </div>
@@ -262,9 +209,18 @@ export default function IndexPage() {
   const _threadId = useRef(uuid());
 
   const handleSendMessage = async (content: string) => {
-    // Set chat as started
+    // Set chat as started with View Transition
     if (!chatStarted) {
-      setChatStarted(true);
+      // Check if View Transitions API is supported
+      if ('startViewTransition' in document) {
+        (document as any).startViewTransition(() => {
+          flushSync(() => {
+            setChatStarted(true);
+          });
+        });
+      } else {
+        setChatStarted(true);
+      }
     }
 
     // Add user message to chat
@@ -362,14 +318,12 @@ export default function IndexPage() {
       {!chatStarted ? (
         <LandingInput onSubmit={handleSendMessage} />
       ) : (
-        <div>
-          <ChatInterface
-            messages={messages}
-            isLoading={isLoading}
-            onSendMessage={handleSendMessage}
-            workflow={workflow}
-          />
-        </div>
+        <ChatInterface
+          messages={messages}
+          isLoading={isLoading}
+          onSendMessage={handleSendMessage}
+          workflow={workflow}
+        />
       )}
     </section>
   );
