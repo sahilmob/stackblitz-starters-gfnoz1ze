@@ -162,12 +162,12 @@ const ChatInterface = ({
       </div>
 
       {/* Main two-pane layout container */}
-      <div className="relative flex h-[calc(100%-40px)] w-full md:h-full">
+      <div className="relative flex h-[calc(100%-40px)] w-full gap-4 md:h-full">
         {/* Left pane - Chat */}
         <div
           className={cn(
-            "flex h-full overflow-hidden",
-            hasWorkflow ? "" : "mx-auto",
+            "flex h-full overflow-hidden transition-all duration-500 ease-in-out",
+            hasWorkflow ? "w-[40%]" : "w-full",
             showMobileView === "workflow" ? "hidden md:block" : "block"
           )}
         >
@@ -204,8 +204,10 @@ const ChatInterface = ({
         {/* Right pane - Workflow visualization */}
         <div
           className={cn(
-            "flex h-full overflow-hidden",
-            showMobileView === "chat" ? "hidden md:block" : "block"
+            "flex h-full overflow-hidden transition-all duration-500 ease-in-out",
+            hasWorkflow ? "w-[60%]" : "w-0 opacity-0",
+            showMobileView === "chat" ? "hidden md:block" : "block",
+            !hasWorkflow && "md:hidden"
           )}
         >
           <Card className="flex h-full w-full flex-col overflow-hidden">
