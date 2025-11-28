@@ -1,90 +1,111 @@
-'use client';
-import Link from 'next/link';
+"use client"
 
-import { siteConfig } from '@/config/site';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { useEffect, useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Send } from 'lucide-react';
-import { Workflow } from '@/components/types';
-import { v4 as uuid } from 'uuid';
-import { cn } from '@/lib/utils';
-import { ButterflowWorkflowVisualization } from '@/components/workflow-visualization';
-import { Badge } from '@/components/ui/badge';
-import { MessageInput } from '@/components/message-input';
+import { useEffect, useRef, useState } from "react"
+import Link from "next/link"
+import { Send } from "lucide-react"
+import { flushSync } from "react-dom"
+import { v4 as uuid } from "uuid"
+
+import { siteConfig } from "@/config/site"
+import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Progress } from "@/components/ui/progress"
+import { Textarea } from "@/components/ui/textarea"
+import { MessageInput } from "@/components/message-input"
+import { Workflow } from "@/components/types"
+import { ButterflowWorkflowVisualization } from "@/components/workflow-visualization"
 
 interface LangChainMessageContent {
-  type: 'text';
-  text: string;
+  type: "text"
+  text: string
 }
 
 interface LangChainMessage {
-  id?: string;
-  type: 'human' | 'ai' | 'system' | 'tool';
-  content: string | LangChainMessageContent[];
-  tool_call_id?: string;
-  complete?: boolean;
+  id?: string
+  type: "human" | "ai" | "system" | "tool"
+  content: string | LangChainMessageContent[]
+  tool_call_id?: string
+  complete?: boolean
 }
 
 const LandingInput = ({
   onSubmit,
+  pendingMessage,
 }: {
-  onSubmit: (message: string) => void;
+  onSubmit: (message: string) => void
+  pendingMessage?: string
 }) => {
   return (
     <div className="h-[calc(100vh-70px)] flex flex-col items-center justify-center p-4">
       <h1 className="mb-8 text-4xl font-bold">Workflow AI</h1>
-      <MessageInput
-        onSubmit={onSubmit}
-        placeholder="Ask anything..."
-        variant="landing"
-        autoFocus
-      />
+      <div className="relative w-full max-w-lg">
+        {pendingMessage && (
+          <div className="absolute left-0 top-0 z-10 w-full pointer-events-none first-message-transition">
+            <div className="px-3 py-2 first-message-content-transition">
+              <p className="m-0 whitespace-pre-wrap text-base leading-normal md:text-sm">{pendingMessage}</p>
+            </div>
+          </div>
+        )}
+        <MessageInput
+          onSubmit={onSubmit}
+          placeholder={pendingMessage ? "" : "Ask anything..."}
+          variant="landing"
+          autoFocus
+        />
+      </div>
     </div>
-  );
-};
+  )
+}
 
 // Chat message component
 const Message = ({
   message,
   index,
+  isFirstMessage,
 }: {
-  message: LangChainMessage;
-  index: number;
+  message: LangChainMessage
+  index: number
+  isFirstMessage?: boolean
 }) => {
-  const isAi = message.type === 'ai';
+  const isAi = message.type === "ai"
 
   return (
     <div
       className={cn(
-        'flex w-full gap-2 p-4',
-        isAi ? 'bg-muted/50' : 'bg-background'
+        "flex w-full gap-2 p-4",
+        isAi ? "bg-muted/50" : "bg-background",
+        isFirstMessage && !isAi && "first-message-transition"
       )}
+      key={message.id}
     >
       <div
         className={cn(
-          'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full',
-          isAi ? 'bg-primary text-primary-foreground' : 'bg-muted'
+          "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full",
+          isAi ? "bg-primary text-primary-foreground" : "bg-muted"
         )}
       >
-        {isAi ? 'AI' : 'Y'}
+        {isAi ? "AI" : "Y"}
       </div>
-      <div className="flex-1">
-        {typeof message.content === 'string' ? (
+      <div
+        className={cn(
+          "flex-1",
+          isFirstMessage && !isAi && "first-message-content-transition"
+        )}
+      >
+        {typeof message.content === "string" ? (
           <p className="whitespace-pre-wrap text-sm">{message.content}</p>
         ) : (
           <p className="whitespace-pre-wrap text-sm">
-            {message.content.map((c) => c.text).join('')}
+            {message.content.map((c) => c.text).join("")}
           </p>
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
 const ChatInterface = ({
   messages,
@@ -92,46 +113,46 @@ const ChatInterface = ({
   onSendMessage,
   workflow,
 }: {
-  messages: LangChainMessage[];
-  isLoading: boolean;
-  onSendMessage: (message: string) => void;
-  workflow: Workflow | null;
+  messages: LangChainMessage[]
+  isLoading: boolean
+  onSendMessage: (message: string) => void
+  workflow: Workflow | null
 }) => {
-  const [showMobileView, setShowMobileView] = useState<'chat' | 'workflow'>(
-    'chat'
-  );
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showMobileView, setShowMobileView] = useState<"chat" | "workflow">(
+    "chat"
+  )
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
     }
-  }, [messages, isLoading]);
+  }, [messages, isLoading])
 
-  const hasWorkflow = workflow !== null;
+  const hasWorkflow = workflow !== null
 
   // These values control the animation positions and widths
-  const leftPaneWidth = hasWorkflow ? '40%' : 'min(100%, 800px)';
-  const leftPaneTranslate = hasWorkflow ? '0%' : '0%';
-  const rightPaneWidth = hasWorkflow ? '60%' : '0%';
-  const rightPaneOpacity = hasWorkflow ? 1 : 0;
-  const rightPaneTranslate = hasWorkflow ? '0%' : '5%';
+  const leftPaneWidth = hasWorkflow ? "40%" : "min(100%, 800px)"
+  const leftPaneTranslate = hasWorkflow ? "0%" : "0%"
+  const rightPaneWidth = hasWorkflow ? "60%" : "0%"
+  const rightPaneOpacity = hasWorkflow ? 1 : 0
+  const rightPaneTranslate = hasWorkflow ? "0%" : "5%"
 
   return (
     <div className="h-[calc(100vh-70px)] w-full px-4 py-2 md:px-8">
       {/* Mobile Toggle - Only on mobile */}
       <div className="mb-2 flex md:hidden">
         <Button
-          variant={showMobileView === 'chat' ? 'default' : 'outline'}
-          onClick={() => setShowMobileView('chat')}
+          variant={showMobileView === "chat" ? "default" : "outline"}
+          onClick={() => setShowMobileView("chat")}
           className="flex-1 rounded-none"
         >
           Chat
         </Button>
         <Button
-          variant={showMobileView === 'workflow' ? 'default' : 'outline'}
-          onClick={() => setShowMobileView('workflow')}
+          variant={showMobileView === "workflow" ? "default" : "outline"}
+          onClick={() => setShowMobileView("workflow")}
           className="flex-1 rounded-none"
           disabled={!hasWorkflow}
         >
@@ -145,9 +166,9 @@ const ChatInterface = ({
         {/* Left pane - Chat */}
         <div
           className={cn(
-            'flex h-full overflow-hidden',
-            hasWorkflow ? '' : 'mx-auto',
-            showMobileView === 'workflow' ? 'hidden md:block' : 'block'
+            "flex h-full overflow-hidden",
+            hasWorkflow ? "" : "mx-auto",
+            showMobileView === "workflow" ? "hidden md:block" : "block"
           )}
         >
           <Card className="flex h-full w-full flex-col overflow-hidden">
@@ -158,9 +179,14 @@ const ChatInterface = ({
               {/* Messages Container */}
               <div className="flex-1 overflow-y-auto p-2">
                 {messages.map((message, i) => (
-                  <Message key={i} message={message} index={i} />
+                  <Message
+                    key={i}
+                    message={message}
+                    index={i}
+                    isFirstMessage={i === 0}
+                  />
                 ))}
-                {isLoading && '...'}
+                {isLoading && "..."}
                 <div ref={messagesEndRef} />
               </div>
 
@@ -178,8 +204,8 @@ const ChatInterface = ({
         {/* Right pane - Workflow visualization */}
         <div
           className={cn(
-            'flex h-full overflow-hidden',
-            showMobileView === 'chat' ? 'hidden md:block' : 'block'
+            "flex h-full overflow-hidden",
+            showMobileView === "chat" ? "hidden md:block" : "block"
           )}
         >
           <Card className="flex h-full w-full flex-col overflow-hidden">
@@ -198,125 +224,137 @@ const ChatInterface = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
 export default function IndexPage() {
-  const [messages, setMessages] = useState<LangChainMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [chatStarted, setChatStarted] = useState(false);
-  const [workflow, setWorkflow] = useState<Workflow | null>(null);
-  const _threadId = useRef(uuid());
+  const [messages, setMessages] = useState<LangChainMessage[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [chatStarted, setChatStarted] = useState(false)
+  const [workflow, setWorkflow] = useState<Workflow | null>(null)
+  const [pendingMessage, setPendingMessage] = useState<string>("")
+  const _threadId = useRef(uuid())
 
   const handleSendMessage = async (content: string) => {
-    // Set chat as started with View Transition
-    if (!chatStarted) {
-      // Check if View Transitions API is supported
-      if ('startViewTransition' in document) {
-        (document as any).startViewTransition(() => {
-          flushSync(() => {
-            setChatStarted(true);
-          });
-        });
-      } else {
-        setChatStarted(true);
-      }
-    }
-
     // Add user message to chat
     const userMessage: LangChainMessage = {
       id: uuid(),
-      type: 'human',
+      type: "human",
       content,
-    };
+    }
 
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
+    // Set chat as started with View Transition
+    if (!chatStarted) {
+      // Show the pending message first
+      setPendingMessage(content)
+
+      // Small delay to ensure the pending message is rendered
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Check if View Transitions API is supported
+      if ("startViewTransition" in document) {
+        ;(document as any).startViewTransition(() => {
+          flushSync(() => {
+            setChatStarted(true)
+            setMessages([userMessage])
+            setPendingMessage("")
+          })
+        })
+      } else {
+        setChatStarted(true)
+        setMessages([userMessage])
+        setPendingMessage("")
+      }
+    } else {
+      setMessages((prev) => [...prev, userMessage])
+    }
+
+    setIsLoading(true)
 
     try {
       // In a real implementation, this would call the streamWorkflow function
       // For now, we'll simulate a response after a delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000))
 
       // Simulate AI response
       const aiMessage: LangChainMessage = {
         id: uuid(),
-        type: 'ai',
+        type: "ai",
         content:
           "I've created a workflow based on your request. You can see it visualized on the right.",
-      };
+      }
 
       // Simulate workflow data (in real implementation, this would come from the streamWorkflow function)
       const mockWorkflow: Workflow = {
-        version: '1.0',
+        version: "1.0",
         nodes: [
           {
-            id: 'start',
-            name: 'Start Node',
-            type: 'automatic',
+            id: "start",
+            name: "Start Node",
+            type: "automatic",
             steps: [],
           },
           {
-            id: 'process',
-            name: 'Process Data',
-            type: 'automatic',
-            depends_on: ['start'],
+            id: "process",
+            name: "Process Data",
+            type: "automatic",
+            depends_on: ["start"],
             steps: [],
           },
           {
-            id: 'decision',
-            name: 'Make Decision',
-            type: 'manual',
-            depends_on: ['process'],
+            id: "decision",
+            name: "Make Decision",
+            type: "manual",
+            depends_on: ["process"],
             steps: [],
           },
           {
-            id: 'success',
-            name: 'Success Path',
-            type: 'automatic',
-            depends_on: ['decision'],
+            id: "success",
+            name: "Success Path",
+            type: "automatic",
+            depends_on: ["decision"],
             steps: [],
           },
           {
-            id: 'failure',
-            name: 'Failure Path',
-            type: 'automatic',
-            depends_on: ['decision'],
+            id: "failure",
+            name: "Failure Path",
+            type: "automatic",
+            depends_on: ["decision"],
             steps: [],
           },
           {
-            id: 'end',
-            name: 'End Node',
-            type: 'automatic',
-            depends_on: ['success', 'failure'],
+            id: "end",
+            name: "End Node",
+            type: "automatic",
+            depends_on: ["success", "failure"],
             steps: [],
           },
         ],
-      };
+      }
 
-      setMessages((prev) => [...prev, aiMessage]);
-      setWorkflow(mockWorkflow);
+      setMessages((prev) => [...prev, aiMessage])
+      setWorkflow(mockWorkflow)
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error)
 
       // Add error message
       const errorMessage: LangChainMessage = {
         id: uuid(),
-        type: 'ai',
+        type: "ai",
         content:
-          'Sorry, there was an error processing your request. Please try again.',
-      };
+          "Sorry, there was an error processing your request. Please try again.",
+      }
 
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage])
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <section>
       {!chatStarted ? (
-        <LandingInput onSubmit={handleSendMessage} />
+        <LandingInput onSubmit={handleSendMessage} pendingMessage={pendingMessage} />
       ) : (
         <ChatInterface
           messages={messages}
@@ -326,5 +364,5 @@ export default function IndexPage() {
         />
       )}
     </section>
-  );
+  )
 }

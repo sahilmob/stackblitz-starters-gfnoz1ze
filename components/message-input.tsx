@@ -80,9 +80,9 @@ export const MessageInput = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className={cn('border-t p-4 message-input-transition', className)}
+      className={cn('message-input-transition', className)}
     >
-      <div className="flex gap-2">
+      <div className="flex gap-2 border-t p-4">
         <Textarea
           ref={textareaRef}
           value={input}

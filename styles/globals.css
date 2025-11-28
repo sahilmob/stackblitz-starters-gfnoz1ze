@@ -7,46 +7,115 @@
   .message-input-transition {
     view-transition-name: message-input;
   }
+
+  .first-message-transition {
+    view-transition-name: first-message;
+  }
+
+  .first-message-content-transition {
+    view-transition-name: first-message-content;
+  }
 }
 
 /* View Transitions for message input */
 ::view-transition-old(message-input),
 ::view-transition-new(message-input) {
-  animation-duration: 0.6s;
+  animation-duration: 0.5s;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  mix-blend-mode: normal;
 }
 
 ::view-transition-old(message-input) {
-  animation-name: slide-and-fade-out;
+  animation-name: input-fade-out;
 }
 
 ::view-transition-new(message-input) {
-  animation-name: slide-and-fade-in;
+  animation-name: input-fade-in;
 }
 
-::view-transition-group(message-input) {
+@keyframes input-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes input-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* View Transitions for first message */
+::view-transition-old(first-message),
+::view-transition-new(first-message) {
+  animation-duration: 0.6s;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes slide-and-fade-out {
+::view-transition-old(first-message) {
+  animation-name: message-slide-out;
+}
+
+::view-transition-new(first-message) {
+  animation-name: message-slide-in;
+}
+
+/* View Transitions for first message content (text) */
+::view-transition-old(first-message-content),
+::view-transition-new(first-message-content) {
+  animation-duration: 0.7s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-old(first-message-content) {
+  animation-name: content-morph-out;
+}
+
+::view-transition-new(first-message-content) {
+  animation-name: content-morph-in;
+}
+
+@keyframes message-slide-out {
   from {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateX(0);
   }
   to {
     opacity: 0;
-    transform: translateY(-20px) scale(0.95);
+    transform: translateX(-30px);
   }
 }
 
-@keyframes slide-and-fade-in {
+@keyframes message-slide-in {
   from {
     opacity: 0;
-    transform: translateY(20px) scale(1.05);
+    transform: translateX(30px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes content-morph-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes content-morph-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
