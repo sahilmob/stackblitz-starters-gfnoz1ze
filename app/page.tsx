@@ -43,10 +43,13 @@ const LandingInput = ({
       <h1 className="mb-8 text-4xl font-bold">Workflow AI</h1>
       <div className="relative w-full max-w-lg">
         {pendingMessage && (
-          <div className="absolute left-0 top-0 z-10 w-full pointer-events-none first-message-transition">
-            <div className="px-3 py-2 first-message-content-transition">
-              <p className="m-0 whitespace-pre-wrap text-base leading-normal md:text-sm">{pendingMessage}</p>
-            </div>
+          <div className="absolute left-0 top-0 z-10 w-full pointer-events-none px-3 py-2">
+            <p
+              className="m-0 whitespace-pre-wrap text-sm"
+              style={{ viewTransitionName: 'first-message-text' }}
+            >
+              {pendingMessage}
+            </p>
           </div>
         )}
         <MessageInput
@@ -76,8 +79,7 @@ const Message = ({
     <div
       className={cn(
         "flex w-full gap-2 p-4",
-        isAi ? "bg-muted/50" : "bg-background",
-        isFirstMessage && !isAi && "first-message-transition"
+        isAi ? "bg-muted/50" : "bg-background"
       )}
       key={message.id}
     >
@@ -89,16 +91,19 @@ const Message = ({
       >
         {isAi ? "AI" : "Y"}
       </div>
-      <div
-        className={cn(
-          "flex-1",
-          isFirstMessage && !isAi && "first-message-content-transition"
-        )}
-      >
+      <div className="flex-1">
         {typeof message.content === "string" ? (
-          <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+          <p
+            className="whitespace-pre-wrap text-sm"
+            style={isFirstMessage && !isAi ? { viewTransitionName: 'first-message-text' } : {}}
+          >
+            {message.content}
+          </p>
         ) : (
-          <p className="whitespace-pre-wrap text-sm">
+          <p
+            className="whitespace-pre-wrap text-sm"
+            style={isFirstMessage && !isAi ? { viewTransitionName: 'first-message-text' } : {}}
+          >
             {message.content.map((c) => c.text).join("")}
           </p>
         )}
