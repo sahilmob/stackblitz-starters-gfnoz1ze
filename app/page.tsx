@@ -162,14 +162,19 @@ const ChatInterface = ({
       </div>
 
       {/* Main two-pane layout container */}
-      <div className="relative flex h-[calc(100%-40px)] w-full gap-4 md:h-full">
+      <div className="relative h-[calc(100%-40px)] w-full md:h-full overflow-hidden">
         {/* Left pane - Chat */}
         <div
           className={cn(
-            "flex h-full overflow-hidden transition-all duration-500 ease-in-out",
-            hasWorkflow ? "w-[40%]" : "w-full max-w-[800px] mx-auto",
-            showMobileView === "workflow" ? "hidden md:block" : "block"
+            "absolute left-0 top-0 h-full transition-all duration-500 ease-in-out flex",
+            showMobileView === "workflow" ? "hidden md:flex" : "flex"
           )}
+          style={{
+            width: hasWorkflow ? '40%' : 'min(100%, 800px)',
+            transform: hasWorkflow
+              ? 'translateX(0)'
+              : 'translateX(calc((100vw - min(100%, 800px) - 4rem) / 2))',
+          }}
         >
           <Card className="flex h-full w-full flex-col overflow-hidden">
             <CardHeader className="pb-0">
@@ -204,25 +209,28 @@ const ChatInterface = ({
         {/* Right pane - Workflow visualization */}
         <div
           className={cn(
-            "flex h-full overflow-hidden transition-all duration-500 ease-in-out",
-            hasWorkflow ? "w-[60%]" : "w-0 opacity-0",
-            showMobileView === "chat" ? "hidden md:block" : "block",
-            !hasWorkflow && "md:hidden"
+            "absolute top-0 h-full transition-all duration-500 ease-in-out flex",
+            showMobileView === "chat" ? "hidden md:flex" : "flex"
           )}
+          style={{
+            left: hasWorkflow ? 'calc(40% + 1rem)' : '100%',
+            width: hasWorkflow ? 'calc(60% - 1rem)' : 'calc(60% - 1rem)',
+            opacity: hasWorkflow ? 1 : 0,
+          }}
         >
-          <Card className="flex h-full w-full flex-col overflow-hidden">
-            <CardHeader className="pb-0">
-              <CardTitle>Workflow Diagram</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 p-0 pt-2">
-              {workflow && (
+          {workflow && (
+            <Card className="flex h-full w-full flex-col overflow-hidden">
+              <CardHeader className="pb-0">
+                <CardTitle>Workflow Diagram</CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 p-0 pt-2">
                 <ButterflowWorkflowVisualization
                   workflow={{ workflow }}
                   tasks={[]}
                 />
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
