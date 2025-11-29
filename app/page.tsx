@@ -1,34 +1,226 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import Link from "next/link"
-import { Send } from "lucide-react"
 import { flushSync } from "react-dom"
 import { v4 as uuid } from "uuid"
 
-import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { Button, buttonVariants } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
-import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { MessageInput } from "@/components/message-input"
-import { Workflow } from "@/components/types"
-import { ButterflowWorkflowVisualization } from "@/components/workflow-visualization"
 
-interface LangChainMessageContent {
-  type: "text"
-  text: string
+type PlanStep = {
+  id: string
+  idx?: number
+  title: string
+  substeps?: string[]
+  status: "pending" | "in_progress" | "completed"
 }
+
+type LangChainMessageContent =
+  | {
+      type: "text"
+      text: string
+    }
+  | {
+      type: "plan"
+      content: []
+    }
 
 interface LangChainMessage {
   id?: string
   type: "human" | "ai" | "system" | "tool"
-  content: string | LangChainMessageContent[]
+  content: string | LangChainMessageContent | PlanStep[]
   tool_call_id?: string
   complete?: boolean
+}
+
+async function* planWorkflow(): AsyncGenerator<
+  { id: string; status: "in_progress" | "completed" },
+  void,
+  unknown
+> {
+  for await (const step of plan) {
+    yield await new Promise<{ id: string; status: "in_progress" }>((resolve) =>
+      setTimeout(() => resolve({ id: step.id, status: "in_progress" }), 100)
+    )
+    yield await new Promise<{ id: string; status: "completed" }>((resolve) =>
+      setTimeout(() => resolve({ id: step.id, status: "completed" }), 2000)
+    )
+  }
+}
+
+const plan: Omit<PlanStep, "status">[] = [
+  {
+    id: uuid(),
+    idx: 0,
+    title: "Setting up database schema",
+    substeps: ["Applying database migrations"],
+  },
+  {
+    id: uuid(),
+    idx: 1,
+    title: "Creating search interface",
+    substeps: ["Writing src/lib/search.tsx"],
+  },
+  { id: uuid(), idx: 2, title: "Implement search functionality" },
+  { id: uuid(), title: "Api integration" },
+  {
+    id: uuid(),
+    idx: 3,
+    title: "Building and verifying project",
+    substeps: ["Run npm run build"],
+  },
+  {
+    id: uuid(),
+    idx: 4,
+    title: "Deploying app",
+  },
+]
+
+const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
+  const [planSteps, setPlanSteps] = useState<PlanStep[]>(planMessage)
+  const planRef = useRef(planWorkflow())
+
+  useEffect(() => {
+    const trackPlan = async () => {
+      for await (const step of planRef.current) {
+        setPlanSteps((prev) =>
+          prev.map((s) =>
+            s.id === step.id ? { ...s, status: step.status } : s
+          )
+        )
+      }
+    }
+
+    trackPlan()
+  }, [])
+
+  return (
+    <div className="w-full max-w-md">
+      <div className="mb-3 flex items-center gap-2">
+        <svg
+          className="h-4 w-4 text-foreground"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+          />
+        </svg>
+        <span className="text-sm font-medium">Plan</span>
+      </div>
+      <div className="space-y-2">
+        {planSteps.map((step) => (
+          <div key={step.id} className="space-y-1">
+            <div className="flex items-start gap-2">
+              <div className="mt-0.5 flex-shrink-0">
+                {step.status === "completed" ? (
+                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-green-500">
+                    <svg
+                      className="h-3 w-3 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                ) : step.status === "in_progress" ? (
+                  <div className="flex h-4 w-4 items-center justify-center">
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                  </div>
+                ) : (
+                  <div className="h-4 w-4 rounded-full border-2 border-muted" />
+                )}
+              </div>
+              <span
+                className={cn(
+                  "text-sm",
+                  step.status === "completed"
+                    ? "text-muted-foreground"
+                    : "text-foreground"
+                )}
+              >
+                {step.title}
+              </span>
+            </div>
+            {step.substeps && step.substeps.length > 0 && (
+              <div className="ml-6 space-y-1">
+                {step.substeps.map((substep, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <svg
+                      className="h-3 w-3 text-muted-foreground"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6"
+                      />
+                    </svg>
+                    <span className="text-xs text-muted-foreground">
+                      {substep}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+
+        {/* Plan Completed Message */}
+        {planSteps.every((step) => step.status === "completed") && (
+          <div className="mt-4 flex items-center gap-2 pt-2 border-t border-muted">
+            <div className="relative h-4 w-5 flex-shrink-0">
+              <svg
+                className="absolute left-0 h-4 w-4 text-green-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              <svg
+                className="absolute left-1.5 h-4 w-4 text-green-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <span className="text-sm font-medium text-green-500">
+              Plan completed
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 const LandingInput = ({
@@ -46,7 +238,7 @@ const LandingInput = ({
           <div className="absolute left-0 top-0 z-10 w-full pointer-events-none px-3 py-2">
             <p
               className="m-0 whitespace-pre-wrap text-sm"
-              style={{ viewTransitionName: 'first-message-text' }}
+              style={{ viewTransitionName: "first-message-text" }}
             >
               {pendingMessage}
             </p>
@@ -67,44 +259,55 @@ const LandingInput = ({
 const Message = ({
   message,
   index,
-  isFirstMessage,
 }: {
   message: LangChainMessage
   index: number
-  isFirstMessage?: boolean
 }) => {
   const isAi = message.type === "ai"
+  const isFirstMessage = index === 0
+
+  // Check if this is a plan message (array content)
+  const isPlanMessage = Array.isArray(message.content)
+
+  // Get the text content from the message
+  const getTextContent = () => {
+    if (typeof message.content === "string") {
+      return message.content
+    }
+    if (typeof message.content === "object" && "text" in message.content) {
+      return message.content.text
+    }
+    return ""
+  }
 
   return (
     <div
       className={cn(
-        "flex w-full gap-2 p-4",
-        isAi ? "bg-muted/50" : "bg-background"
+        "flex w-full mb-6",
+
+        !isAi && "justify-end"
       )}
       key={message.id}
     >
-      <div
-        className={cn(
-          "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full",
-          isAi ? "bg-primary text-primary-foreground" : "bg-muted"
-        )}
-      >
-        {isAi ? "AI" : "Y"}
-      </div>
-      <div className="flex-1">
-        {typeof message.content === "string" ? (
-          <p
-            className="whitespace-pre-wrap text-sm"
-            style={isFirstMessage && !isAi ? { viewTransitionName: 'first-message-text' } : {}}
-          >
-            {message.content}
-          </p>
+      <div>
+        {isPlanMessage ? (
+          <PlanMessage planMessage={message.content as PlanStep[]} />
         ) : (
           <p
-            className="whitespace-pre-wrap text-sm"
-            style={isFirstMessage && !isAi ? { viewTransitionName: 'first-message-text' } : {}}
+            className={cn(
+              "whitespace-pre-wrap",
+              "text-sm",
+              "p-3 rounded-xl",
+
+              !isAi ? "bg-muted/90" : "bg-background"
+            )}
+            style={
+              isFirstMessage && !isAi
+                ? { viewTransitionName: "first-message-text" }
+                : {}
+            }
           >
-            {message.content.map((c) => c.text).join("")}
+            {getTextContent()}
           </p>
         )}
       </div>
@@ -116,12 +319,12 @@ const ChatInterface = ({
   messages,
   isLoading,
   onSendMessage,
-  workflow,
+  plan,
 }: {
   messages: LangChainMessage[]
   isLoading: boolean
   onSendMessage: (message: string) => void
-  workflow: Workflow | null
+  plan: PlanStep[] | null
 }) => {
   const [showMobileView, setShowMobileView] = useState<"chat" | "workflow">(
     "chat"
@@ -135,17 +338,17 @@ const ChatInterface = ({
     }
   }, [messages, isLoading])
 
-  const hasWorkflow = workflow !== null
+  const hasPlan = plan !== null
 
   // These values control the animation positions and widths
-  const leftPaneWidth = hasWorkflow ? "40%" : "min(100%, 800px)"
-  const leftPaneTranslate = hasWorkflow ? "0%" : "0%"
-  const rightPaneWidth = hasWorkflow ? "60%" : "0%"
-  const rightPaneOpacity = hasWorkflow ? 1 : 0
-  const rightPaneTranslate = hasWorkflow ? "0%" : "5%"
+  const leftPaneWidth = hasPlan ? "40%" : "min(100%, 800px)"
+  const leftPaneTranslate = hasPlan ? "0%" : "0%"
+  const rightPaneWidth = hasPlan ? "60%" : "0%"
+  const rightPaneOpacity = hasPlan ? 1 : 0
+  const rightPaneTranslate = hasPlan ? "0%" : "5%"
 
   return (
-    <div className="h-[calc(100vh-70px)] w-full px-4 py-2 md:px-8">
+    <div className="h-[calc(100vh-70px)] w-full px-4 py-8 pb-4 md:px-8">
       {/* Mobile Toggle - Only on mobile */}
       <div className="mb-2 flex md:hidden">
         <Button
@@ -159,10 +362,10 @@ const ChatInterface = ({
           variant={showMobileView === "workflow" ? "default" : "outline"}
           onClick={() => setShowMobileView("workflow")}
           className="flex-1 rounded-none"
-          disabled={!hasWorkflow}
+          disabled={!hasPlan}
         >
           Workflow
-          {hasWorkflow && <Badge className="ml-2">1</Badge>}
+          {hasPlan && <Badge className="ml-2">1</Badge>}
         </Button>
       </div>
 
@@ -175,26 +378,18 @@ const ChatInterface = ({
             showMobileView === "workflow" ? "hidden md:flex" : "flex"
           )}
           style={{
-            width: hasWorkflow ? '40%' : 'min(100%, 800px)',
-            transform: hasWorkflow
-              ? 'translateX(0)'
-              : 'translateX(calc((100vw - min(100%, 800px) - 4rem) / 2))',
+            width: hasPlan ? "40%" : "min(100%, 800px)",
+            transform: hasPlan
+              ? "translateX(0)"
+              : "translateX(calc((100vw - min(100%, 800px) - 4rem) / 2))",
           }}
         >
-          <Card className="flex h-full w-full flex-col overflow-hidden">
-            <CardHeader className="pb-0">
-              <CardTitle>Chat</CardTitle>
-            </CardHeader>
+          <Card className="flex h-full w-full flex-col overflow-hidden border-none">
             <CardContent className="flex flex-1 flex-col overflow-hidden pb-0">
               {/* Messages Container */}
               <div className="flex-1 overflow-y-auto p-2">
                 {messages.map((message, i) => (
-                  <Message
-                    key={i}
-                    message={message}
-                    index={i}
-                    isFirstMessage={i === 0}
-                  />
+                  <Message key={i} message={message} index={i} />
                 ))}
                 {isLoading && "..."}
                 <div ref={messagesEndRef} />
@@ -204,7 +399,7 @@ const ChatInterface = ({
               <MessageInput
                 onSubmit={onSendMessage}
                 disabled={isLoading}
-                placeholder="Type your message..."
+                placeholder="How can I help you?"
                 variant="chat"
               />
             </CardContent>
@@ -218,21 +413,17 @@ const ChatInterface = ({
             showMobileView === "chat" ? "hidden md:flex" : "flex"
           )}
           style={{
-            left: hasWorkflow ? 'calc(40% + 1rem)' : '100%',
-            width: hasWorkflow ? 'calc(60% - 1rem)' : 'calc(60% - 1rem)',
-            opacity: hasWorkflow ? 1 : 0,
+            left: hasPlan ? "calc(40% + 1rem)" : "100%",
+            width: hasPlan ? "calc(60% - 1rem)" : "calc(60% - 1rem)",
+            opacity: hasPlan ? 1 : 0,
           }}
         >
-          {workflow && (
+          {plan && (
             <Card className="flex h-full w-full flex-col overflow-hidden">
-              <CardHeader className="pb-0">
-                <CardTitle>Workflow Diagram</CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 p-0 pt-2">
-                <ButterflowWorkflowVisualization
-                  workflow={{ workflow }}
-                  tasks={[]}
-                />
+              <CardContent className="flex h-full flex-col items-center justify-center p-6">
+                <p className="text-center text-sm text-muted-foreground">
+                  Your preview will appear here
+                </p>
               </CardContent>
             </Card>
           )}
@@ -246,7 +437,9 @@ export default function IndexPage() {
   const [messages, setMessages] = useState<LangChainMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [chatStarted, setChatStarted] = useState(false)
-  const [workflow, setWorkflow] = useState<Workflow | null>(null)
+  const [landingpagePlan, setLandingpagePlan] = useState<PlanStep[] | null>(
+    null
+  )
   const [pendingMessage, setPendingMessage] = useState<string>("")
   const _threadId = useRef(uuid())
 
@@ -264,7 +457,7 @@ export default function IndexPage() {
       setPendingMessage(content)
 
       // Small delay to ensure the pending message is rendered
-      await new Promise(resolve => setTimeout(resolve, 50))
+      await new Promise((resolve) => setTimeout(resolve, 50))
 
       // Check if View Transitions API is supported
       if ("startViewTransition" in document) {
@@ -295,60 +488,28 @@ export default function IndexPage() {
       const aiMessage: LangChainMessage = {
         id: uuid(),
         type: "ai",
-        content:
-          "I've created a workflow based on your request. You can see it visualized on the right.",
+        content: {
+          type: "text",
+          text: "I'll help you build a landing page like google.com. This will be a fully-featured application with search history.",
+        },
       }
 
       // Simulate workflow data (in real implementation, this would come from the streamWorkflow function)
-      const mockWorkflow: Workflow = {
-        version: "1.0",
-        nodes: [
-          {
-            id: "start",
-            name: "Start Node",
-            type: "automatic",
-            steps: [],
-          },
-          {
-            id: "process",
-            name: "Process Data",
-            type: "automatic",
-            depends_on: ["start"],
-            steps: [],
-          },
-          {
-            id: "decision",
-            name: "Make Decision",
-            type: "manual",
-            depends_on: ["process"],
-            steps: [],
-          },
-          {
-            id: "success",
-            name: "Success Path",
-            type: "automatic",
-            depends_on: ["decision"],
-            steps: [],
-          },
-          {
-            id: "failure",
-            name: "Failure Path",
-            type: "automatic",
-            depends_on: ["decision"],
-            steps: [],
-          },
-          {
-            id: "end",
-            name: "End Node",
-            type: "automatic",
-            depends_on: ["success", "failure"],
-            steps: [],
-          },
-        ],
-      }
+      const langingpagePlan = plan.map((s) => ({ ...s, status: "pending" }))
 
       setMessages((prev) => [...prev, aiMessage])
-      setWorkflow(mockWorkflow)
+      await new Promise((resolve) => setTimeout(resolve, 550))
+
+      // Set the plan to trigger the right pane to appear
+      setLandingpagePlan(langingpagePlan)
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: "ai",
+          content: langingpagePlan,
+        },
+      ])
     } catch (error) {
       console.error("Error sending message:", error)
 
@@ -369,13 +530,16 @@ export default function IndexPage() {
   return (
     <section>
       {!chatStarted ? (
-        <LandingInput onSubmit={handleSendMessage} pendingMessage={pendingMessage} />
+        <LandingInput
+          onSubmit={handleSendMessage}
+          pendingMessage={pendingMessage}
+        />
       ) : (
         <ChatInterface
           messages={messages}
           isLoading={isLoading}
           onSendMessage={handleSendMessage}
-          workflow={workflow}
+          plan={landingpagePlan}
         />
       )}
     </section>
