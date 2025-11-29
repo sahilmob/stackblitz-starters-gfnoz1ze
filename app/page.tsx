@@ -1,12 +1,11 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { animate, type Variants } from "framer-motion"
+import { animate } from "framer-motion"
 import { flushSync } from "react-dom"
 import { v4 as uuid } from "uuid"
 
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { MessageInput, MessageInputRef } from "@/components/message-input"
@@ -189,21 +188,6 @@ const plan: Omit<PlanStep, "status">[] = [
     title: "Deploying app",
   },
 ]
-
-const itemVariants: Variants = {
-  hidden: { x: -30 },
-  visible: { x: 0 },
-}
-
-const containerVariants: Variants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
-    },
-  },
-}
 
 // Helper function to parse text with backticks and render as code
 const parseTextWithCode = (text: string) => {
@@ -585,9 +569,6 @@ const ChatInterface = ({
   isPlanCompleted: boolean
   onPlanComplete: () => void
 }) => {
-  const [showMobileView, setShowMobileView] = useState<"chat" | "workflow">(
-    "chat"
-  )
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom of messages
@@ -602,43 +583,13 @@ const ChatInterface = ({
   // Show stop icon when loading (waiting for response or executing plan)
   const isExecutingPlan = isLoading || (plan !== null && !isPlanCompleted)
 
-  // These values control the animation positions and widths
-  const leftPaneWidth = hasPlan ? "40%" : "min(100%, 800px)"
-  const leftPaneTranslate = hasPlan ? "0%" : "0%"
-  const rightPaneWidth = hasPlan ? "60%" : "0%"
-  const rightPaneOpacity = hasPlan ? 1 : 0
-  const rightPaneTranslate = hasPlan ? "0%" : "5%"
-
   return (
     <div className="h-[calc(100vh-70px)] w-full px-4 py-8 pb-4 md:px-8">
-      {/* Mobile Toggle - Only on mobile */}
-      <div className="mb-2 flex md:hidden">
-        <Button
-          variant={showMobileView === "chat" ? "default" : "outline"}
-          onClick={() => setShowMobileView("chat")}
-          className="flex-1 rounded-none"
-        >
-          Chat
-        </Button>
-        <Button
-          variant={showMobileView === "workflow" ? "default" : "outline"}
-          onClick={() => setShowMobileView("workflow")}
-          className="flex-1 rounded-none"
-          disabled={!hasPlan}
-        >
-          Workflow
-          {hasPlan && <Badge className="ml-2">1</Badge>}
-        </Button>
-      </div>
-
       {/* Main two-pane layout container */}
-      <div className="relative h-[calc(100%-40px)] w-full md:h-full overflow-hidden">
+      <div className="relative h-full w-full overflow-hidden">
         {/* Left pane - Chat */}
         <div
-          className={cn(
-            "absolute left-0 top-0 h-full transition-all duration-500 ease-in-out flex",
-            showMobileView === "workflow" ? "hidden md:flex" : "flex"
-          )}
+          className="absolute left-0 top-0 h-full transition-all duration-500 ease-in-out flex"
           style={{
             width: hasPlan ? "40%" : "min(100%, 800px)",
             transform: hasPlan
@@ -676,10 +627,7 @@ const ChatInterface = ({
 
         {/* Right pane - Workflow visualization */}
         <div
-          className={cn(
-            "absolute top-0 h-full transition-all duration-500 ease-in-out flex",
-            showMobileView === "chat" ? "hidden md:flex" : "flex"
-          )}
+          className="absolute top-0 h-full transition-all duration-500 ease-in-out flex"
           style={{
             left: hasPlan ? "calc(40% + 1rem)" : "100%",
             width: hasPlan ? "calc(60% - 1rem)" : "calc(60% - 1rem)",
