@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { ArrowUpIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -16,16 +16,25 @@ interface MessageInputProps {
   autoFocus?: boolean
 }
 
-export const MessageInput = ({
+export interface MessageInputRef {
+  textareaElement: HTMLTextAreaElement | null
+}
+
+export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({
   onSubmit,
   disabled = false,
   placeholder = "Ask anything...",
   className,
   variant = "chat",
   autoFocus = false,
-}: MessageInputProps) => {
+}, ref) => {
   const [input, setInput] = useState("")
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Expose the textarea element to parent components
+  useImperativeHandle(ref, () => ({
+    textareaElement: textareaRef.current,
+  }))
 
   useEffect(() => {
     if (autoFocus && textareaRef.current) {
@@ -109,4 +118,6 @@ export const MessageInput = ({
       </div>
     </form>
   )
-}
+})
+
+MessageInput.displayName = "MessageInput"

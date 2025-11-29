@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { animate, useMotionValue, useMotionValueEvent } from "framer-motion"
 import { flushSync } from "react-dom"
 import { v4 as uuid } from "uuid"
 
@@ -8,7 +9,113 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { MessageInput } from "@/components/message-input"
+import { MessageInput, MessageInputRef } from "@/components/message-input"
+
+const PHRASES = [
+  "landing page to launch...",
+  "data visualization tool",
+  "MVP for my startup",
+  "prototype to validate my idea",
+]
+
+const PREFIX = "Let's build a "
+
+// Separate component to isolate typing animation re-renders
+const TypewriterInput = ({
+  onSubmit,
+  pendingMessage,
+}: {
+  onSubmit: (message: string) => void
+  pendingMessage?: string
+}) => {
+  const inputRef = useRef<MessageInputRef>(null)
+  const [prefixComplete, setPrefixComplete] = useState(false)
+  const stoppedRef = useRef(false)
+
+  useEffect(() => {
+    let stopped = false
+
+    const runAnimation = async () => {
+      const textarea = inputRef.current?.textareaElement
+      if (!textarea) return
+
+      // 1. Type prefix once
+      if (!prefixComplete && !stopped && !stoppedRef.current) {
+        await animate(0, PREFIX.length, {
+          duration: PREFIX.length * 0.075,
+          ease: "linear",
+          onUpdate: (latest) => {
+            if (!stopped && !stoppedRef.current && textarea) {
+              const chars = Math.floor(latest)
+              textarea.placeholder = PREFIX.slice(0, chars)
+            }
+          },
+        })
+        if (!stopped && !stoppedRef.current) setPrefixComplete(true)
+      }
+
+      // 2. Infinite phrase loop
+      let phraseIdx = 0
+      while (!stopped && !stoppedRef.current) {
+        const phrase = PHRASES[phraseIdx]
+        const fullText = PREFIX + phrase
+
+        // TYPE: animate forward
+        await animate(PREFIX.length, fullText.length, {
+          duration: phrase.length * 0.075,
+          ease: "linear",
+          onUpdate: (latest) => {
+            if (!stopped && !stoppedRef.current && textarea) {
+              const chars = Math.floor(latest)
+              textarea.placeholder = fullText.slice(0, chars)
+            }
+          },
+        })
+
+        // WAIT: 2 second pause
+        if (!stopped && !stoppedRef.current) await new Promise((r) => setTimeout(r, 2000))
+
+        // DELETE: animate backward
+        await animate(fullText.length, PREFIX.length, {
+          duration: phrase.length * 0.05,
+          ease: "linear",
+          onUpdate: (latest) => {
+            if (!stopped && !stoppedRef.current && textarea) {
+              const chars = Math.floor(latest)
+              textarea.placeholder = fullText.slice(0, chars)
+            }
+          },
+        })
+
+        phraseIdx = (phraseIdx + 1) % PHRASES.length
+      }
+    }
+
+    runAnimation()
+    return () => {
+      stopped = true
+    }
+  }, [prefixComplete])
+
+  const handleSubmit = useCallback((message: string) => {
+    // Stop animation and clear placeholder
+    stoppedRef.current = true
+    if (inputRef.current?.textareaElement) {
+      inputRef.current.textareaElement.placeholder = ""
+    }
+    onSubmit(message)
+  }, [onSubmit])
+
+  return (
+    <MessageInput
+      ref={inputRef}
+      onSubmit={handleSubmit}
+      placeholder={""}
+      variant="landing"
+      autoFocus
+    />
+  )
+}
 
 type PlanStep = {
   id: string
@@ -261,12 +368,7 @@ const LandingInput = ({
             </p>
           </div>
         )}
-        <MessageInput
-          onSubmit={onSubmit}
-          placeholder={pendingMessage ? "" : "Ask anything..."}
-          variant="landing"
-          autoFocus
-        />
+        <TypewriterInput onSubmit={onSubmit} pendingMessage={pendingMessage} />
       </div>
     </div>
   )
