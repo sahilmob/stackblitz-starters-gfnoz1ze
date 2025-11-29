@@ -6,7 +6,6 @@ import { flushSync } from "react-dom"
 import { v4 as uuid } from "uuid"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { MessageInput, MessageInputRef } from "@/components/message-input"
 
@@ -19,13 +18,10 @@ const PHRASES = [
 
 const PREFIX = "Let's build a "
 
-// Separate component to isolate typing animation re-renders
 const TypewriterInput = ({
   onSubmit,
-  pendingMessage,
 }: {
   onSubmit: (message: string) => void
-  pendingMessage?: string
 }) => {
   const inputRef = useRef<MessageInputRef>(null)
   const [prefixComplete, setPrefixComplete] = useState(false)
@@ -120,11 +116,16 @@ const TypewriterInput = ({
   )
 }
 
+type SubStep = {
+  title: string
+  status: "pending" | "in_progress" | "completed"
+}
+
 type PlanStep = {
   id: string
   idx?: number
   title: string
-  substeps?: string[]
+  substeps?: SubStep[]
   status: "pending" | "in_progress" | "completed"
 }
 
@@ -147,7 +148,7 @@ interface LangChainMessage {
 }
 
 async function* planWorkflow(): AsyncGenerator<
-  { id: string; status: "in_progress" | "completed" },
+  { id: string; status: "in_progress" | "completed"; substepIndex?: number },
   void,
   unknown
 > {
@@ -155,6 +156,24 @@ async function* planWorkflow(): AsyncGenerator<
     yield await new Promise<{ id: string; status: "in_progress" }>((resolve) =>
       setTimeout(() => resolve({ id: step.id, status: "in_progress" }), 100)
     )
+
+    // Process substeps if they exist
+    if (step.substeps) {
+      for (let i = 0; i < step.substeps.length; i++) {
+        yield await new Promise<{
+          id: string
+          status: "in_progress"
+          substepIndex: number
+        }>((resolve) =>
+          setTimeout(
+            () =>
+              resolve({ id: step.id, status: "in_progress", substepIndex: i }),
+            2000
+          )
+        )
+      }
+    }
+
     yield await new Promise<{ id: string; status: "completed" }>((resolve) =>
       setTimeout(() => resolve({ id: step.id, status: "completed" }), 2000)
     )
@@ -166,26 +185,65 @@ const plan: Omit<PlanStep, "status">[] = [
     id: uuid(),
     idx: 0,
     title: "Setting up database schema",
-    substeps: ["Applying database migrations"],
+    substeps: [
+      { title: "Creating database configuration", status: "pending" as const },
+      { title: "Applying database migrations", status: "pending" as const },
+      { title: "Seeding initial data", status: "pending" as const },
+    ],
   },
   {
     id: uuid(),
     idx: 1,
     title: "Creating search interface",
-    substeps: ["Writing `src/lib/search.tsx`"],
+    substeps: [
+      { title: "Writing `src/lib/search.tsx`", status: "pending" as const },
+      { title: "Adding search input component", status: "pending" as const },
+      {
+        title: "Implementing autocomplete feature",
+        status: "pending" as const,
+      },
+    ],
   },
-  { id: uuid(), idx: 2, title: "Implement search functionality" },
-  { id: uuid(), title: "Api integration" },
+  {
+    id: uuid(),
+    idx: 2,
+    title: "Implement search functionality",
+    substeps: [
+      { title: "Setting up search API endpoint", status: "pending" as const },
+      { title: "Adding search indexing", status: "pending" as const },
+    ],
+  },
+  {
+    id: uuid(),
+    title: "Api integration",
+    substeps: [
+      { title: "Configuring API client", status: "pending" as const },
+      { title: "Adding authentication middleware", status: "pending" as const },
+      { title: "Testing API endpoints", status: "pending" as const },
+    ],
+  },
   {
     id: uuid(),
     idx: 3,
     title: "Building and verifying project",
-    substeps: ["Run `npm run build`"],
+    substeps: [
+      { title: "Running type checks", status: "pending" as const },
+      { title: "Run `npm run build`", status: "pending" as const },
+      { title: "Verifying production build", status: "pending" as const },
+    ],
   },
   {
     id: uuid(),
     idx: 4,
     title: "Deploying app",
+    substeps: [
+      {
+        title: "Setting up deployment configuration",
+        status: "pending" as const,
+      },
+      { title: "Deploying to production", status: "pending" as const },
+      { title: "Running smoke tests", status: "pending" as const },
+    ],
   },
 ]
 
@@ -193,10 +251,13 @@ const plan: Omit<PlanStep, "status">[] = [
 const parseTextWithCode = (text: string) => {
   const parts = text.split(/(`[^`]+`)/)
   return parts.map((part, index) => {
-    if (part.startsWith('`') && part.endsWith('`')) {
+    if (part.startsWith("`") && part.endsWith("`")) {
       const code = part.slice(1, -1)
       return (
-        <code key={index} className="ml-1 px-1.5 py-0.5 rounded bg-muted text-foreground font-mono text-xs">
+        <code
+          key={index}
+          className="ml-1 px-1.5 py-0.5 rounded bg-muted text-foreground font-mono text-xs"
+        >
           {code}
         </code>
       )
@@ -205,19 +266,50 @@ const parseTextWithCode = (text: string) => {
   })
 }
 
-const PlanMessage = ({ planMessage, onPlanComplete }: { planMessage: PlanStep[], onPlanComplete?: () => void }) => {
+const PlanMessage = ({
+  planMessage,
+  onPlanComplete,
+}: {
+  planMessage: PlanStep[]
+  onPlanComplete?: () => void
+}) => {
   const [planSteps, setPlanSteps] = useState<PlanStep[]>(planMessage)
   const planRef = useRef(planWorkflow())
 
   useEffect(() => {
     const trackPlan = async () => {
-      for await (const step of planRef.current) {
+      for await (const update of planRef.current) {
         setPlanSteps((prev) => {
-          const updated = prev.map((s) =>
-            s.id === step.id ? { ...s, status: step.status } : s
-          )
+          const updated = prev.map((s) => {
+            if (s.id === update.id) {
+              // If substepIndex is provided, update that specific substep
+              if (update.substepIndex !== undefined && s.substeps) {
+                const substepIndex = update.substepIndex
+                const newSubsteps = s.substeps.map((sub, idx) => {
+                  if (idx === substepIndex) {
+                    return { ...sub, status: "in_progress" as const }
+                  } else if (idx < substepIndex) {
+                    return { ...sub, status: "completed" as const }
+                  }
+                  return sub
+                })
+                return { ...s, substeps: newSubsteps }
+              }
+              // Update main step status
+              const newStep = { ...s, status: update.status }
+              // If step is completed, mark all substeps as completed
+              if (update.status === "completed" && s.substeps) {
+                newStep.substeps = s.substeps.map((sub) => ({
+                  ...sub,
+                  status: "completed" as const,
+                }))
+              }
+              return newStep
+            }
+            return s
+          })
           // Check if all steps are completed
-          if (updated.every(s => s.status === 'completed')) {
+          if (updated.every((s) => s.status === "completed")) {
             onPlanComplete?.()
           }
           return updated
@@ -232,7 +324,7 @@ const PlanMessage = ({ planMessage, onPlanComplete }: { planMessage: PlanStep[],
     <div className="w-full max-w-md">
       <div className="mb-3 flex items-center gap-2 animate-[slideIn_0.4s_ease-out]">
         <svg
-          className="h-4 w-4 text-foreground"
+          className="h-5 w-5 text-foreground"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -257,11 +349,11 @@ const PlanMessage = ({ planMessage, onPlanComplete }: { planMessage: PlanStep[],
             }}
           >
             <div className="flex items-start gap-2">
-              <div className="mt-0.5 flex-shrink-0">
+              <div className="mt-1 flex-shrink-0">
                 {step.status === "completed" ? (
                   <div className="flex h-4 w-4 items-center justify-center rounded-full bg-green-500">
                     <svg
-                      className="h-3 w-3 text-white"
+                      className="h-2.5 w-2.5 text-white"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -276,7 +368,7 @@ const PlanMessage = ({ planMessage, onPlanComplete }: { planMessage: PlanStep[],
                   </div>
                 ) : step.status === "in_progress" ? (
                   <div className="flex h-4 w-4 items-center justify-center">
-                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                    <div className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
                   </div>
                 ) : (
                   <div className="h-4 w-4 rounded-full border-2 border-muted" />
@@ -293,42 +385,53 @@ const PlanMessage = ({ planMessage, onPlanComplete }: { planMessage: PlanStep[],
                 {step.title}
               </span>
             </div>
-            {step.substeps && step.substeps.length > 0 && (
-              <div className="ml-6 space-y-1">
-                {step.substeps.map((substep, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <svg
-                      className={cn(
-                        "h-3 w-3 transition-colors duration-500",
-                        step.status === "completed"
-                          ? "text-foreground"
-                          : "text-muted-foreground"
-                      )}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6"
-                      />
-                    </svg>
-                    <span
-                      className={cn(
-                        "text-xs transition-colors duration-500",
-                        step.status === "completed"
-                          ? "text-foreground"
-                          : "text-muted-foreground"
-                      )}
-                    >
-                      {parseTextWithCode(substep)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+            {step.substeps &&
+              step.substeps.length > 0 &&
+              step.status !== "pending" && (
+                <div className="ml-6 space-y-1">
+                  {step.substeps
+                    .filter((substep) => substep.status === "in_progress")
+                    .map((substep, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-2 animate-[slideIn_0.3s_ease-out]"
+                        style={{
+                          animationDelay: `${idx * 0.1}s`,
+                          animationFillMode: "both",
+                        }}
+                      >
+                        <svg
+                          className={cn(
+                            "h-3 w-3 transition-colors duration-500",
+                            substep.status === "completed"
+                              ? "text-foreground"
+                              : "text-muted-foreground"
+                          )}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6"
+                          />
+                        </svg>
+                        <span
+                          className={cn(
+                            "text-xs transition-colors duration-500",
+                            substep.status === "completed"
+                              ? "text-foreground"
+                              : "text-muted-foreground"
+                          )}
+                        >
+                          {parseTextWithCode(substep.title)}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              )}
           </div>
         ))}
 
@@ -405,7 +508,7 @@ const LandingInput = ({
             </p>
           </div>
         )}
-        <TypewriterInput onSubmit={onSubmit} pendingMessage={pendingMessage} />
+        <TypewriterInput onSubmit={onSubmit} />
       </div>
     </div>
   )
@@ -527,7 +630,10 @@ const Message = ({
     >
       <div>
         {isPlanMessage ? (
-          <PlanMessage planMessage={message.content as PlanStep[]} onPlanComplete={onPlanComplete} />
+          <PlanMessage
+            planMessage={message.content as PlanStep[]}
+            onPlanComplete={onPlanComplete}
+          />
         ) : (
           <p
             className={cn(
@@ -602,7 +708,12 @@ const ChatInterface = ({
               {/* Messages Container */}
               <div className="flex-1 overflow-y-auto py-2">
                 {messages.map((message, i) => (
-                  <Message key={i} message={message} index={i} onPlanComplete={onPlanComplete} />
+                  <Message
+                    key={i}
+                    message={message}
+                    index={i}
+                    onPlanComplete={onPlanComplete}
+                  />
                 ))}
                 {isLoading && (
                   <ThinkingIndicator
@@ -715,7 +826,10 @@ export default function IndexPage() {
       }
 
       // Simulate workflow data (in real implementation, this would come from the streamWorkflow function)
-      const langingpagePlan: PlanStep[] = plan.map((s) => ({ ...s, status: "pending" as const }))
+      const langingpagePlan: PlanStep[] = plan.map((s) => ({
+        ...s,
+        status: "pending" as const,
+      }))
 
       setMessages((prev) => [...prev, aiMessage])
 

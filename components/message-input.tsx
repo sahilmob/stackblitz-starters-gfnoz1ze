@@ -1,7 +1,7 @@
 "use client"
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
-import { ArrowUpIcon, Square } from "lucide-react"
+import { ArrowRightIcon, Square } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -47,6 +47,17 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({
     }
   }, [autoFocus])
 
+  // Auto-expand textarea based on content
+  useEffect(() => {
+    const textarea = textareaRef.current
+    if (textarea) {
+      textarea.style.height = 'auto'
+      const maxHeight = 200
+      const newHeight = Math.min(textarea.scrollHeight, maxHeight)
+      textarea.style.height = `${newHeight}px`
+    }
+  }, [input])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (input.trim()) {
@@ -79,7 +90,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="min-h-[56px] text-lg resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="min-h-[56px] max-h-[200px] text-lg resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0"
           />
           <Button
             type="submit"
@@ -90,7 +101,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({
             {showStopIcon ? (
               <Square key="stop" className="h-5 w-5 icon-fade-in" />
             ) : (
-              <ArrowUpIcon key="arrow" className="h-5 w-5 icon-fade-in" />
+              <ArrowRightIcon key="arrow" className="h-5 w-5 icon-fade-in" />
             )}
           </Button>
         </div>
@@ -114,7 +125,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="min-h-[60px] resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="min-h-[60px] max-h-[200px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0"
         />
         <Button
           type="submit"
@@ -125,7 +136,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({
           {showStopIcon ? (
             <Square key="stop" className="h-5 w-5 icon-fade-in" />
           ) : (
-            <ArrowUpIcon key="arrow" className="h-5 w-5 icon-fade-in" />
+            <ArrowRightIcon key="arrow" className="h-5 w-5 icon-fade-in" />
           )}
         </Button>
       </div>
