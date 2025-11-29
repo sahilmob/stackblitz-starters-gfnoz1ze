@@ -29,11 +29,11 @@ export const shadcnPlugin = plugin(
                 "--radius": "0.5rem"
             },
             ".dark": {
-                "--background": "20 14.3% 4.1%",
+                "--background": "0 0% 9%",
                 "--foreground": "60 9.1% 97.8%",
-                "--card": "20 14.3% 4.1%",
+                "--card": "0 0% 9%",
                 "--card-foreground": "60 9.1% 97.8%",
-                "--popover": "20 14.3% 4.1%",
+                "--popover": "0 0% 9%",
                 "--popover-foreground": "60 9.1% 97.8%",
                 "--primary": "66 70% 54%",
                 "--primary-foreground": "0 0% 0%",

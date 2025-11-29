@@ -1,7 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { animate, useMotionValue, useMotionValueEvent } from "framer-motion"
+import { animate, m, useMotionValue, useMotionValueEvent } from "framer-motion"
+import type { Variants } from "framer-motion"
 import { flushSync } from "react-dom"
 import { v4 as uuid } from "uuid"
 
@@ -73,7 +74,8 @@ const TypewriterInput = ({
         })
 
         // WAIT: 2 second pause
-        if (!stopped && !stoppedRef.current) await new Promise((r) => setTimeout(r, 2000))
+        if (!stopped && !stoppedRef.current)
+          await new Promise((r) => setTimeout(r, 2000))
 
         // DELETE: animate backward
         await animate(fullText.length, PREFIX.length, {
@@ -97,14 +99,17 @@ const TypewriterInput = ({
     }
   }, [prefixComplete])
 
-  const handleSubmit = useCallback((message: string) => {
-    // Stop animation and clear placeholder
-    stoppedRef.current = true
-    if (inputRef.current?.textareaElement) {
-      inputRef.current.textareaElement.placeholder = ""
-    }
-    onSubmit(message)
-  }, [onSubmit])
+  const handleSubmit = useCallback(
+    (message: string) => {
+      // Stop animation and clear placeholder
+      stoppedRef.current = true
+      if (inputRef.current?.textareaElement) {
+        inputRef.current.textareaElement.placeholder = ""
+      }
+      onSubmit(message)
+    },
+    [onSubmit]
+  )
 
   return (
     <MessageInput
@@ -188,7 +193,13 @@ const plan: Omit<PlanStep, "status">[] = [
 
 const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
   const [planSteps, setPlanSteps] = useState<PlanStep[]>(planMessage)
+  const [isVisible, setIsVisible] = useState(false)
   const planRef = useRef(planWorkflow())
+
+  useEffect(() => {
+    // Trigger animation after mount
+    setIsVisible(true)
+  }, [])
 
   useEffect(() => {
     const trackPlan = async () => {
@@ -206,7 +217,12 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
 
   return (
     <div className="w-full max-w-md">
-      <div className="mb-3 flex items-center gap-2">
+      <div
+        className={cn(
+          "mb-3 flex items-center gap-2 transition-all duration-400 ease-out",
+          isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-7"
+        )}
+      >
         <svg
           className="h-4 w-4 text-foreground"
           fill="none"
@@ -223,8 +239,17 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
         <span className="text-sm font-medium">Plan</span>
       </div>
       <div className="space-y-3">
-        {planSteps.map((step) => (
-          <div key={step.id} className="space-y-1">
+        {planSteps.map((step, index) => (
+          <div
+            key={step.id}
+            className={cn(
+              "space-y-1 transition-all duration-400 ease-out",
+              isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-7"
+            )}
+            style={{
+              transitionDelay: `${(index + 1) * 100 + 200}ms`
+            }}
+          >
             <div className="flex items-start gap-2">
               <div className="mt-0.5 flex-shrink-0">
                 {step.status === "completed" ? (
@@ -303,7 +328,7 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
 
         {/* Plan Completed Message */}
         {planSteps.every((step) => step.status === "completed") && (
-          <div className="mt-4 flex items-center gap-2 pt-2 border-t border-muted">
+          <div className="mt-4 flex items-center gap-2 pt-2">
             <div className="relative h-4 w-5 flex-shrink-0">
               <svg
                 className="absolute left-0 h-4 w-4 text-green-600"
@@ -374,6 +399,66 @@ const LandingInput = ({
   )
 }
 
+// Thinking indicator component
+const ThinkingIndicator = ({ isCreatingPlan }: { isCreatingPlan?: boolean }) => {
+  return (
+    <div className="flex items-center gap-2 text-muted-foreground">
+      <div className="relative">
+        {isCreatingPlan ? (
+          <svg
+            className="w-5 h-5 animate-pulse"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+            />
+          </svg>
+        ) : (
+          <svg
+            className="w-5 h-5 animate-pulse"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+            />
+          </svg>
+        )}
+        <div className="absolute inset-0 w-5 h-5 bg-primary/20 rounded-full blur-md animate-pulse" />
+      </div>
+      <span className="text-sm">{isCreatingPlan ? "Creating a plan..." : "Thinking..."}</span>
+    </div>
+  )
+}
+
+// Streaming text component for AI messages
+const StreamingText = ({ text }: { text: string }) => {
+  const [displayedText, setDisplayedText] = useState("")
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timer = setTimeout(() => {
+        setDisplayedText(text.slice(0, currentIndex + 1))
+        setCurrentIndex(currentIndex + 1)
+      }, 20) // 20ms per character for smooth streaming
+
+      return () => clearTimeout(timer)
+    }
+  }, [currentIndex, text])
+
+  return <>{displayedText}</>
+}
+
 // Chat message component
 const Message = ({
   message,
@@ -398,6 +483,9 @@ const Message = ({
     }
     return ""
   }
+
+  const textContent = getTextContent()
+  const shouldStream = isAi && textContent && !isPlanMessage
 
   return (
     <div
@@ -426,7 +514,7 @@ const Message = ({
                 : {}
             }
           >
-            {getTextContent()}
+            {shouldStream ? <StreamingText text={textContent} /> : textContent}
           </p>
         )}
       </div>
@@ -437,11 +525,13 @@ const Message = ({
 const ChatInterface = ({
   messages,
   isLoading,
+  isCreatingPlan,
   onSendMessage,
   plan,
 }: {
   messages: LangChainMessage[]
   isLoading: boolean
+  isCreatingPlan: boolean
   onSendMessage: (message: string) => void
   plan: PlanStep[] | null
 }) => {
@@ -506,11 +596,11 @@ const ChatInterface = ({
           <Card className="flex h-full w-full flex-col overflow-hidden border-none">
             <CardContent className="flex flex-1 flex-col overflow-hidden pb-0">
               {/* Messages Container */}
-              <div className="flex-1 overflow-y-auto p-2">
+              <div className="flex-1 overflow-y-auto py-2">
                 {messages.map((message, i) => (
                   <Message key={i} message={message} index={i} />
                 ))}
-                {isLoading && "..."}
+                {isLoading && <ThinkingIndicator isCreatingPlan={isCreatingPlan} />}
                 <div ref={messagesEndRef} />
               </div>
 
@@ -555,6 +645,7 @@ const ChatInterface = ({
 export default function IndexPage() {
   const [messages, setMessages] = useState<LangChainMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isCreatingPlan, setIsCreatingPlan] = useState(false)
   const [chatStarted, setChatStarted] = useState(false)
   const [landingpagePlan, setLandingpagePlan] = useState<PlanStep[] | null>(
     null
@@ -604,12 +695,13 @@ export default function IndexPage() {
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
       // Simulate AI response
+      const aiMessageText = "I'll help you build a landing page like google.com. This will be a fully-featured application with search history."
       const aiMessage: LangChainMessage = {
         id: uuid(),
         type: "ai",
         content: {
           type: "text",
-          text: "I'll help you build a landing page like google.com. This will be a fully-featured application with search history.",
+          text: aiMessageText,
         },
       }
 
@@ -617,7 +709,16 @@ export default function IndexPage() {
       const langingpagePlan = plan.map((s) => ({ ...s, status: "pending" }))
 
       setMessages((prev) => [...prev, aiMessage])
-      await new Promise((resolve) => setTimeout(resolve, 550))
+
+      // Wait for streaming animation to complete (20ms per character)
+      const streamingDuration = aiMessageText.length * 20
+      await new Promise((resolve) => setTimeout(resolve, streamingDuration + 300))
+
+      // Now creating the plan
+      setIsCreatingPlan(true)
+
+      // Wait a bit to show "Creating a plan..." message
+      await new Promise((resolve) => setTimeout(resolve, 3000))
 
       // Set the plan to trigger the right pane to appear
       setLandingpagePlan(langingpagePlan)
@@ -629,6 +730,8 @@ export default function IndexPage() {
           content: langingpagePlan,
         },
       ])
+
+      setIsCreatingPlan(false)
     } catch (error) {
       console.error("Error sending message:", error)
 
@@ -657,6 +760,7 @@ export default function IndexPage() {
         <ChatInterface
           messages={messages}
           isLoading={isLoading}
+          isCreatingPlan={isCreatingPlan}
           onSendMessage={handleSendMessage}
           plan={landingpagePlan}
         />
