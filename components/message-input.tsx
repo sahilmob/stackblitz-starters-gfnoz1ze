@@ -84,13 +84,13 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({
           <Button
             type="submit"
             size="icon"
-            className="h-10 w-10 flex-shrink-0 mb-px"
+            className="h-10 w-10 flex-shrink-0 mb-px transition-all duration-500 ease-in-out"
             disabled={!showStopIcon && !input.trim()}
           >
             {showStopIcon ? (
-              <Square className="h-5 w-5" />
+              <Square key="stop" className="h-5 w-5 icon-fade-in" />
             ) : (
-              <ArrowUpIcon className="h-5 w-5" />
+              <ArrowUpIcon key="arrow" className="h-5 w-5 icon-fade-in" />
             )}
           </Button>
         </div>
@@ -119,13 +119,13 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({
         <Button
           type="submit"
           size="icon"
-          className="h-10 w-10 flex-shrink-0 mb-px"
+          className="h-10 w-10 flex-shrink-0 mb-px transition-all duration-500 ease-in-out"
           disabled={!showStopIcon && !input.trim()}
         >
           {showStopIcon ? (
-            <Square className="h-5 w-5" />
+            <Square key="stop" className="h-5 w-5 icon-fade-in" />
           ) : (
-            <ArrowUpIcon className="h-5 w-5" />
+            <ArrowUpIcon key="arrow" className="h-5 w-5 icon-fade-in" />
           )}
         </Button>
       </div>
