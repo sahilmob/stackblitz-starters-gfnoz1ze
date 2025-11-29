@@ -130,3 +130,30 @@
     transform: translateX(0);
   }
 }
+
+@keyframes glare {
+  0% {
+    clip-path: polygon(-50% -30%, 0% -50%, 30% -30%, -30% 30%);
+  }
+  100% {
+    clip-path: polygon(70% 130%, 130% 70%, 150% 130%, 100% 150%);
+  }
+}
+
+@keyframes glare-horizontal {
+  0% {
+    clip-path: polygon(-30% 0%, 0% 0%, 0% 100%, -30% 100%);
+  }
+  100% {
+    clip-path: polygon(100% 0%, 130% 0%, 130% 100%, 100% 100%);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
