@@ -391,12 +391,11 @@ const PlanMessage = ({
                 <div className="ml-6 space-y-1">
                   {step.substeps
                     .filter((substep) => substep.status === "in_progress")
-                    .map((substep, idx) => (
+                    .map((substep) => (
                       <div
-                        key={idx}
-                        className="flex items-center gap-2 animate-[slideIn_0.3s_ease-out]"
+                        key={substep.title}
+                        className="flex items-center gap-2 animate-[fadeIn_0.4s_ease-in]"
                         style={{
-                          animationDelay: `${idx * 0.1}s`,
                           animationFillMode: "both",
                         }}
                       >
