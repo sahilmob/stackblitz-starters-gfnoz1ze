@@ -441,7 +441,7 @@ const ThinkingIndicator = ({
   const iconPath = isCreatingPlan ? clipboardPath : lightbulbPath
 
   return (
-    <div className="flex items-center gap-2 text-muted-foreground animate-[fadeIn_0.3s_ease-in] transition-all duration-500">
+    <div className="flex items-center gap-2 text-muted-foreground animate-[fadeIn_0.3s_ease-in] transition-all duration-500 mb-6">
       <div className="relative w-5 h-5">
         {/* Base icon */}
         <svg
