@@ -61,6 +61,7 @@ export const MessageInput = ({
           <Textarea
             ref={textareaRef}
             value={input}
+            autoFocus
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
@@ -82,12 +83,16 @@ export const MessageInput = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className={cn("message-input-transition bg-muted/50 rounded-lg p-3", className)}
+      className={cn(
+        "message-input-transition bg-muted/50 rounded-lg p-3",
+        className
+      )}
     >
       <div className="flex gap-2 items-end">
         <Textarea
           ref={textareaRef}
           value={input}
+          autoFocus
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}

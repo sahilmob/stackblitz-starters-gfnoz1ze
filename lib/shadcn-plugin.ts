@@ -13,8 +13,8 @@ export const shadcnPlugin = plugin(
                 "--card-foreground": "20 14.3% 4.1%",
                 "--popover": "0 0% 100%",
                 "--popover-foreground": "20 14.3% 4.1%",
-                "--primary": "24.6 95% 53.1%",
-                "--primary-foreground": "60 9.1% 97.8%",
+                "--primary": "66 70% 54%",
+                "--primary-foreground": "0 0% 0%",
                 "--secondary": "60 4.8% 95.9%",
                 "--secondary-foreground": "24 9.8% 10%",
                 "--muted": "60 4.8% 95.9%",
@@ -25,7 +25,7 @@ export const shadcnPlugin = plugin(
                 "--destructive-foreground": "60 9.1% 97.8%",
                 "--border": "20 5.9% 90%",
                 "--input": "20 5.9% 90%",
-                "--ring": "24.6 95% 53.1%",
+                "--ring": "66 70% 54%",
                 "--radius": "0.5rem"
             },
             ".dark": {
@@ -35,8 +35,8 @@ export const shadcnPlugin = plugin(
                 "--card-foreground": "60 9.1% 97.8%",
                 "--popover": "20 14.3% 4.1%",
                 "--popover-foreground": "60 9.1% 97.8%",
-                "--primary": "20.5 90.2% 48.2%",
-                "--primary-foreground": "60 9.1% 97.8%",
+                "--primary": "66 70% 54%",
+                "--primary-foreground": "0 0% 0%",
                 "--secondary": "12 6.5% 15.1%",
                 "--secondary-foreground": "60 9.1% 97.8%",
                 "--muted": "12 6.5% 15.1%",
@@ -47,7 +47,7 @@ export const shadcnPlugin = plugin(
                 "--destructive-foreground": "60 9.1% 97.8%",
                 "--border": "12 6.5% 15.1%",
                 "--input": "12 6.5% 15.1%",
-                "--ring": "20.5 90.2% 48.2%"
+                "--ring": "66 70% 54%"
             }
         })
         addBase({

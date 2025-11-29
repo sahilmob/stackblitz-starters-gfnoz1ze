@@ -243,8 +243,13 @@ const LandingInput = ({
   pendingMessage?: string
 }) => {
   return (
-    <div className="h-[calc(100vh-70px)] flex flex-col items-center justify-center p-4">
-      <h1 className="mb-8 text-4xl font-bold">Workflow AI</h1>
+    <div className="h-[calc(100vh-6rem)] flex flex-col items-center justify-center p-4">
+      <div className="mb-16 text-center">
+        <h1 className="text-4xl font-bold mb-2">What do you want to build?</h1>
+        <p className="text-muted-foreground">
+          Prompt, run, edit, and deploy changes
+        </p>
+      </div>
       <div className="relative w-full max-w-lg">
         {pendingMessage && (
           <div className="absolute left-0 top-0 z-10 w-full pointer-events-none px-3 py-2">
