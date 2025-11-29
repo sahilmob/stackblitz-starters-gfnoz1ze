@@ -1,8 +1,13 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { animate, m, useMotionValue, useMotionValueEvent } from "framer-motion"
-import type { Variants } from "framer-motion"
+import {
+  animate,
+  m,
+  useMotionValue,
+  useMotionValueEvent,
+  type Variants,
+} from "framer-motion"
 import { flushSync } from "react-dom"
 import { v4 as uuid } from "uuid"
 
@@ -191,15 +196,24 @@ const plan: Omit<PlanStep, "status">[] = [
   },
 ]
 
+const itemVariants: Variants = {
+  hidden: { x: -30 },
+  visible: { x: 0 },
+}
+
+const containerVariants: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+}
+
 const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
   const [planSteps, setPlanSteps] = useState<PlanStep[]>(planMessage)
-  const [isVisible, setIsVisible] = useState(false)
   const planRef = useRef(planWorkflow())
-
-  useEffect(() => {
-    // Trigger animation after mount
-    setIsVisible(true)
-  }, [])
 
   useEffect(() => {
     const trackPlan = async () => {
@@ -217,12 +231,7 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
 
   return (
     <div className="w-full max-w-md">
-      <div
-        className={cn(
-          "mb-3 flex items-center gap-2 transition-all duration-400 ease-out",
-          isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-7"
-        )}
-      >
+      <div className="mb-3 flex items-center gap-2 animate-[slideIn_0.4s_ease-out]">
         <svg
           className="h-4 w-4 text-foreground"
           fill="none"
@@ -242,12 +251,10 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
         {planSteps.map((step, index) => (
           <div
             key={step.id}
-            className={cn(
-              "space-y-1 transition-all duration-400 ease-out",
-              isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-7"
-            )}
+            className="space-y-1 animate-[slideIn_0.4s_ease-out]"
             style={{
-              transitionDelay: `${(index + 1) * 100 + 200}ms`
+              animationDelay: `${index * 0.1 + 0.2}s`,
+              animationFillMode: "both",
             }}
           >
             <div className="flex items-start gap-2">
@@ -278,7 +285,7 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
               </div>
               <span
                 className={cn(
-                  "text-sm",
+                  "text-sm transition-colors duration-500",
                   step.status === "completed"
                     ? "text-foreground"
                     : "text-muted-foreground"
@@ -293,7 +300,7 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
                   <div key={idx} className="flex items-center gap-2">
                     <svg
                       className={cn(
-                        "h-3 w-3",
+                        "h-3 w-3 transition-colors duration-500",
                         step.status === "completed"
                           ? "text-foreground"
                           : "text-muted-foreground"
@@ -311,7 +318,7 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
                     </svg>
                     <span
                       className={cn(
-                        "text-xs",
+                        "text-xs transition-colors duration-500",
                         step.status === "completed"
                           ? "text-foreground"
                           : "text-muted-foreground"
@@ -328,7 +335,13 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
 
         {/* Plan Completed Message */}
         {planSteps.every((step) => step.status === "completed") && (
-          <div className="mt-4 flex items-center gap-2 pt-2">
+          <div
+            className="mt-4 flex items-center gap-2 pt-2 animate-[slideIn_0.4s_ease-out]"
+            style={{
+              animationDelay: `${planSteps.length * 0.1}s`,
+              animationFillMode: "both",
+            }}
+          >
             <div className="relative h-4 w-5 flex-shrink-0">
               <svg
                 className="absolute left-0 h-4 w-4 text-green-600"
@@ -400,7 +413,11 @@ const LandingInput = ({
 }
 
 // Thinking indicator component
-const ThinkingIndicator = ({ isCreatingPlan }: { isCreatingPlan?: boolean }) => {
+const ThinkingIndicator = ({
+  isCreatingPlan,
+}: {
+  isCreatingPlan?: boolean
+}) => {
   return (
     <div className="flex items-center gap-2 text-muted-foreground">
       <div className="relative">
@@ -435,7 +452,9 @@ const ThinkingIndicator = ({ isCreatingPlan }: { isCreatingPlan?: boolean }) => 
         )}
         <div className="absolute inset-0 w-5 h-5 bg-primary/20 rounded-full blur-md animate-pulse" />
       </div>
-      <span className="text-sm">{isCreatingPlan ? "Creating a plan..." : "Thinking..."}</span>
+      <span className="text-sm">
+        {isCreatingPlan ? "Creating a plan..." : "Thinking..."}
+      </span>
     </div>
   )
 }
@@ -504,9 +523,9 @@ const Message = ({
             className={cn(
               "whitespace-pre-wrap",
               "text-sm",
-              "p-3 rounded-xl",
+              "rounded-xl",
 
-              !isAi ? "bg-muted/90" : "bg-background"
+              !isAi ? "bg-muted/90 py-2 px-3" : "bg-background"
             )}
             style={
               isFirstMessage && !isAi
@@ -600,7 +619,9 @@ const ChatInterface = ({
                 {messages.map((message, i) => (
                   <Message key={i} message={message} index={i} />
                 ))}
-                {isLoading && <ThinkingIndicator isCreatingPlan={isCreatingPlan} />}
+                {isLoading && (
+                  <ThinkingIndicator isCreatingPlan={isCreatingPlan} />
+                )}
                 <div ref={messagesEndRef} />
               </div>
 
@@ -695,7 +716,8 @@ export default function IndexPage() {
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
       // Simulate AI response
-      const aiMessageText = "I'll help you build a landing page like google.com. This will be a fully-featured application with search history."
+      const aiMessageText =
+        "I'll help you build a landing page like google.com. This will be a fully-featured application with search history."
       const aiMessage: LangChainMessage = {
         id: uuid(),
         type: "ai",
@@ -712,7 +734,9 @@ export default function IndexPage() {
 
       // Wait for streaming animation to complete (20ms per character)
       const streamingDuration = aiMessageText.length * 20
-      await new Promise((resolve) => setTimeout(resolve, streamingDuration + 300))
+      await new Promise((resolve) =>
+        setTimeout(resolve, streamingDuration + 300)
+      )
 
       // Now creating the plan
       setIsCreatingPlan(true)

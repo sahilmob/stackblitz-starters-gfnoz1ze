@@ -79,7 +79,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({
           <Button
             type="submit"
             size="icon"
-            className="h-10 w-10 flex-shrink-0 mb-px"
+            className="h-10 w-10 flex-shrink-0 mb-px transition-all duration-300"
             disabled={!input.trim() || disabled}
           >
             <ArrowUpIcon className="h-5 w-5" />
@@ -110,7 +110,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({
         <Button
           type="submit"
           size="icon"
-          className="h-10 w-10 flex-shrink-0 mb-px"
+          className="h-10 w-10 flex-shrink-0 mb-px transition-all duration-300"
           disabled={input.trim() === "" || disabled}
         >
           <ArrowUpIcon className="h-5 w-5" />
