@@ -115,7 +115,7 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
         </svg>
         <span className="text-sm font-medium">Plan</span>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {planSteps.map((step) => (
           <div key={step.id} className="space-y-1">
             <div className="flex items-start gap-2">
@@ -148,8 +148,8 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
                 className={cn(
                   "text-sm",
                   step.status === "completed"
-                    ? "text-muted-foreground"
-                    : "text-foreground"
+                    ? "text-foreground"
+                    : "text-muted-foreground"
                 )}
               >
                 {step.title}
@@ -160,7 +160,12 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
                 {step.substeps.map((substep, idx) => (
                   <div key={idx} className="flex items-center gap-2">
                     <svg
-                      className="h-3 w-3 text-muted-foreground"
+                      className={cn(
+                        "h-3 w-3",
+                        step.status === "completed"
+                          ? "text-foreground"
+                          : "text-muted-foreground"
+                      )}
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -172,7 +177,14 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
                         d="M9 12h6"
                       />
                     </svg>
-                    <span className="text-xs text-muted-foreground">
+                    <span
+                      className={cn(
+                        "text-xs",
+                        step.status === "completed"
+                          ? "text-foreground"
+                          : "text-muted-foreground"
+                      )}
+                    >
                       {substep}
                     </span>
                   </div>
@@ -187,7 +199,7 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
           <div className="mt-4 flex items-center gap-2 pt-2 border-t border-muted">
             <div className="relative h-4 w-5 flex-shrink-0">
               <svg
-                className="absolute left-0 h-4 w-4 text-green-500"
+                className="absolute left-0 h-4 w-4 text-green-600"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -200,7 +212,7 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
                 />
               </svg>
               <svg
-                className="absolute left-1.5 h-4 w-4 text-green-500"
+                className="absolute left-1.5 h-4 w-4 text-green-600"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -213,7 +225,7 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
                 />
               </svg>
             </div>
-            <span className="text-sm font-medium text-green-500">
+            <span className="text-sm font-medium text-green-600">
               Plan completed
             </span>
           </div>

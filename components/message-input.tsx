@@ -53,29 +53,28 @@ export const MessageInput = ({
       <form
         onSubmit={handleSubmit}
         className={cn(
-          "group relative w-full max-w-lg message-input-transition",
+          "w-full max-w-lg message-input-transition bg-muted/50 rounded-lg p-3",
           className
         )}
       >
-        <Textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className="min-h-[56px] pr-12 text-lg shadow-lg resize-none"
-        />
-        <Button
-          type="submit"
-          size="icon"
-          className={cn(
-            "absolute right-1 top-1/2 -translate-y-1/2 opacity-70 group-hover:opacity-100",
-            !input.trim() || disabled ? "cursor-not-allowed" : "cursor-pointer"
-          )}
-          disabled={!input.trim() || disabled}
-        >
-          <ArrowUpIcon className="h-5 w-5" />
-        </Button>
+        <div className="flex gap-2 items-end">
+          <Textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            className="min-h-[56px] text-lg resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+          <Button
+            type="submit"
+            size="icon"
+            className="h-10 w-10 flex-shrink-0 mb-px"
+            disabled={!input.trim() || disabled}
+          >
+            <ArrowUpIcon className="h-5 w-5" />
+          </Button>
+        </div>
       </form>
     )
   }
@@ -83,19 +82,24 @@ export const MessageInput = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className={cn("message-input-transition", className)}
+      className={cn("message-input-transition bg-muted/50 rounded-lg p-3", className)}
     >
-      <div className="flex gap-2 border-t pt-4 items-end">
+      <div className="flex gap-2 items-end">
         <Textarea
           ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="min-h-[60px] resize-none"
+          className="min-h-[60px] resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
         />
-        <Button type="submit" disabled={input.trim() === "" || disabled}>
-          <ArrowUpIcon className="h-4 w-4" />
+        <Button
+          type="submit"
+          size="icon"
+          className="h-10 w-10 flex-shrink-0 mb-px"
+          disabled={input.trim() === "" || disabled}
+        >
+          <ArrowUpIcon className="h-5 w-5" />
         </Button>
       </div>
     </form>
