@@ -1,13 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import {
-  animate,
-  m,
-  useMotionValue,
-  useMotionValueEvent,
-  type Variants,
-} from "framer-motion"
+import { animate, type Variants } from "framer-motion"
 import { flushSync } from "react-dom"
 import { v4 as uuid } from "uuid"
 
@@ -179,7 +173,7 @@ const plan: Omit<PlanStep, "status">[] = [
     id: uuid(),
     idx: 1,
     title: "Creating search interface",
-    substeps: ["Writing src/lib/search.tsx"],
+    substeps: ["Writing `src/lib/search.tsx`"],
   },
   { id: uuid(), idx: 2, title: "Implement search functionality" },
   { id: uuid(), title: "Api integration" },
@@ -187,7 +181,7 @@ const plan: Omit<PlanStep, "status">[] = [
     id: uuid(),
     idx: 3,
     title: "Building and verifying project",
-    substeps: ["Run npm run build"],
+    substeps: ["Run `npm run build`"],
   },
   {
     id: uuid(),
@@ -209,6 +203,22 @@ const containerVariants: Variants = {
       delayChildren: 0.2,
     },
   },
+}
+
+// Helper function to parse text with backticks and render as code
+const parseTextWithCode = (text: string) => {
+  const parts = text.split(/(`[^`]+`)/)
+  return parts.map((part, index) => {
+    if (part.startsWith('`') && part.endsWith('`')) {
+      const code = part.slice(1, -1)
+      return (
+        <code key={index} className="ml-1 px-1.5 py-0.5 rounded bg-muted text-foreground font-mono text-xs">
+          {code}
+        </code>
+      )
+    }
+    return <span key={index}>{part}</span>
+  })
 }
 
 const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
@@ -324,7 +334,7 @@ const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
                           : "text-muted-foreground"
                       )}
                     >
-                      {substep}
+                      {parseTextWithCode(substep)}
                     </span>
                   </div>
                 ))}
@@ -426,7 +436,7 @@ const ThinkingIndicator = ({
   const iconPath = isCreatingPlan ? clipboardPath : lightbulbPath
 
   return (
-    <div className="flex items-center gap-2 text-muted-foreground animate-[fadeIn_0.3s_ease-in]">
+    <div className="flex items-center gap-2 text-muted-foreground animate-[fadeIn_0.3s_ease-in] transition-all duration-500">
       <div className="relative w-5 h-5">
         {/* Base icon */}
         <svg
@@ -578,6 +588,9 @@ const ChatInterface = ({
 
   const hasPlan = plan !== null
 
+  // Show stop icon when loading (waiting for response or executing plan)
+  const isExecutingPlan = isLoading
+
   // These values control the animation positions and widths
   const leftPaneWidth = hasPlan ? "40%" : "min(100%, 800px)"
   const leftPaneTranslate = hasPlan ? "0%" : "0%"
@@ -630,7 +643,10 @@ const ChatInterface = ({
                   <Message key={i} message={message} index={i} />
                 ))}
                 {isLoading && (
-                  <ThinkingIndicator key={isCreatingPlan ? "creating" : "thinking"} isCreatingPlan={isCreatingPlan} />
+                  <ThinkingIndicator
+                    key={isCreatingPlan ? "creating" : "thinking"}
+                    isCreatingPlan={isCreatingPlan}
+                  />
                 )}
                 <div ref={messagesEndRef} />
               </div>
@@ -641,6 +657,7 @@ const ChatInterface = ({
                 disabled={isLoading}
                 placeholder="How can I help you?"
                 variant="chat"
+                isExecutingPlan={isExecutingPlan}
               />
             </CardContent>
           </Card>
@@ -738,7 +755,7 @@ export default function IndexPage() {
       }
 
       // Simulate workflow data (in real implementation, this would come from the streamWorkflow function)
-      const langingpagePlan = plan.map((s) => ({ ...s, status: "pending" }))
+      const langingpagePlan: PlanStep[] = plan.map((s) => ({ ...s, status: "pending" as const }))
 
       setMessages((prev) => [...prev, aiMessage])
 
