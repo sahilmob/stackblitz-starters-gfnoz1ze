@@ -2,7 +2,6 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { ArrowUpIcon, Square } from "lucide-react"
-import { AnimatePresence, m } from "framer-motion"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -85,34 +84,14 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({
           <Button
             type="submit"
             size="icon"
-            className="h-10 w-10 flex-shrink-0 mb-px transition-all duration-300 relative"
+            className="h-10 w-10 flex-shrink-0 mb-px"
             disabled={!showStopIcon && !input.trim()}
           >
-            <AnimatePresence initial={false}>
-              {showStopIcon ? (
-                <m.div
-                  key="stop"
-                  initial={{ scale: 0, rotate: 90, opacity: 0 }}
-                  animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                  exit={{ scale: 0, rotate: -90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center justify-center"
-                >
-                  <Square className="h-5 w-5" />
-                </m.div>
-              ) : (
-                <m.div
-                  key="arrow"
-                  initial={{ scale: 0, rotate: 90, opacity: 0 }}
-                  animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                  exit={{ scale: 0, rotate: -90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center justify-center"
-                >
-                  <ArrowUpIcon className="h-5 w-5" />
-                </m.div>
-              )}
-            </AnimatePresence>
+            {showStopIcon ? (
+              <Square className="h-5 w-5" />
+            ) : (
+              <ArrowUpIcon className="h-5 w-5" />
+            )}
           </Button>
         </div>
       </form>
@@ -140,34 +119,14 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({
         <Button
           type="submit"
           size="icon"
-          className="h-10 w-10 flex-shrink-0 mb-px transition-all duration-300 relative"
+          className="h-10 w-10 flex-shrink-0 mb-px"
           disabled={!showStopIcon && !input.trim()}
         >
-          <AnimatePresence initial={false}>
-            {showStopIcon ? (
-              <m.div
-                key="stop"
-                initial={{ scale: 0, rotate: 90, opacity: 0 }}
-                animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                exit={{ scale: 0, rotate: -90, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="flex items-center justify-center"
-              >
-                <Square className="h-5 w-5" />
-              </m.div>
-            ) : (
-              <m.div
-                key="arrow"
-                initial={{ scale: 0, rotate: 90, opacity: 0 }}
-                animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                exit={{ scale: 0, rotate: -90, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="flex items-center justify-center"
-              >
-                <ArrowUpIcon className="h-5 w-5" />
-              </m.div>
-            )}
-          </AnimatePresence>
+          {showStopIcon ? (
+            <Square className="h-5 w-5" />
+          ) : (
+            <ArrowUpIcon className="h-5 w-5" />
+          )}
         </Button>
       </div>
     </form>

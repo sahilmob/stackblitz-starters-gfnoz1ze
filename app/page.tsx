@@ -221,23 +221,28 @@ const parseTextWithCode = (text: string) => {
   })
 }
 
-const PlanMessage = ({ planMessage }: { planMessage: PlanStep[] }) => {
+const PlanMessage = ({ planMessage, onPlanComplete }: { planMessage: PlanStep[], onPlanComplete?: () => void }) => {
   const [planSteps, setPlanSteps] = useState<PlanStep[]>(planMessage)
   const planRef = useRef(planWorkflow())
 
   useEffect(() => {
     const trackPlan = async () => {
       for await (const step of planRef.current) {
-        setPlanSteps((prev) =>
-          prev.map((s) =>
+        setPlanSteps((prev) => {
+          const updated = prev.map((s) =>
             s.id === step.id ? { ...s, status: step.status } : s
           )
-        )
+          // Check if all steps are completed
+          if (updated.every(s => s.status === 'completed')) {
+            onPlanComplete?.()
+          }
+          return updated
+        })
       }
     }
 
     trackPlan()
-  }, [])
+  }, [onPlanComplete])
 
   return (
     <div className="w-full max-w-md">
@@ -501,9 +506,11 @@ const StreamingText = ({ text }: { text: string }) => {
 const Message = ({
   message,
   index,
+  onPlanComplete,
 }: {
   message: LangChainMessage
   index: number
+  onPlanComplete?: () => void
 }) => {
   const isAi = message.type === "ai"
   const isFirstMessage = index === 0
@@ -536,7 +543,7 @@ const Message = ({
     >
       <div>
         {isPlanMessage ? (
-          <PlanMessage planMessage={message.content as PlanStep[]} />
+          <PlanMessage planMessage={message.content as PlanStep[]} onPlanComplete={onPlanComplete} />
         ) : (
           <p
             className={cn(
@@ -567,12 +574,16 @@ const ChatInterface = ({
   isCreatingPlan,
   onSendMessage,
   plan,
+  isPlanCompleted,
+  onPlanComplete,
 }: {
   messages: LangChainMessage[]
   isLoading: boolean
   isCreatingPlan: boolean
   onSendMessage: (message: string) => void
   plan: PlanStep[] | null
+  isPlanCompleted: boolean
+  onPlanComplete: () => void
 }) => {
   const [showMobileView, setShowMobileView] = useState<"chat" | "workflow">(
     "chat"
@@ -589,7 +600,7 @@ const ChatInterface = ({
   const hasPlan = plan !== null
 
   // Show stop icon when loading (waiting for response or executing plan)
-  const isExecutingPlan = isLoading
+  const isExecutingPlan = isLoading || (plan !== null && !isPlanCompleted)
 
   // These values control the animation positions and widths
   const leftPaneWidth = hasPlan ? "40%" : "min(100%, 800px)"
@@ -640,7 +651,7 @@ const ChatInterface = ({
               {/* Messages Container */}
               <div className="flex-1 overflow-y-auto py-2">
                 {messages.map((message, i) => (
-                  <Message key={i} message={message} index={i} />
+                  <Message key={i} message={message} index={i} onPlanComplete={onPlanComplete} />
                 ))}
                 {isLoading && (
                   <ThinkingIndicator
@@ -698,6 +709,7 @@ export default function IndexPage() {
   const [landingpagePlan, setLandingpagePlan] = useState<PlanStep[] | null>(
     null
   )
+  const [isPlanCompleted, setIsPlanCompleted] = useState(false)
   const [pendingMessage, setPendingMessage] = useState<string>("")
   const _threadId = useRef(uuid())
 
@@ -773,6 +785,7 @@ export default function IndexPage() {
 
       // Set the plan to trigger the right pane to appear
       setLandingpagePlan(langingpagePlan)
+      setIsPlanCompleted(false)
 
       setMessages((prev) => [
         ...prev,
@@ -814,6 +827,8 @@ export default function IndexPage() {
           isCreatingPlan={isCreatingPlan}
           onSendMessage={handleSendMessage}
           plan={landingpagePlan}
+          isPlanCompleted={isPlanCompleted}
+          onPlanComplete={() => setIsPlanCompleted(true)}
         />
       )}
     </section>
